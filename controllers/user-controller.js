@@ -1,6 +1,7 @@
 const User = require("../model/User.js");
+const bcrypt = require("bcryptjs");
 
-// Login
+// GetAllUser
 const getAllUser = async (req, res, next) => {
     let users;
     try {
@@ -67,8 +68,8 @@ const login = async (req, res, next) => {
     if (!isPasswordCorrect) {
         return res.status(400).json({ message: "Incorrect Password" });
     }
-    return res
-        .status(200)
+    return res.status(200)
         .json({ message: "Login Successfull", user: existingUser });
 };
+
 module.exports = login;
