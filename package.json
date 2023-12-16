@@ -1,0 +1,11 @@
+{
+  "name": "06_blog_backend_images",
+  "version": "1.0.0",
+  "description": "Building backend project using men to upload images.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Shashank Naik",
+  "license": "ISC"
+}
