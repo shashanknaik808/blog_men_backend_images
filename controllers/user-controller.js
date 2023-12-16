@@ -31,12 +31,12 @@ const signup = async (req, res, next) => {
             .status(400)
             .json({ message: "User Already Exists! Login Instead" });
     }
-    // const hashedPassword = bcrypt.hashSync(password);
+    const hashedPassword = bcrypt.hashSync(password);
 
     const user = new User({
         name,
         email,
-        password
+        password: hashedPassword
         // blogs: [],
     });
 
@@ -47,5 +47,4 @@ const signup = async (req, res, next) => {
     }
     return res.status(201).json({ user });
 };
-
 module.exports = signup;
