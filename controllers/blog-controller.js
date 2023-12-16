@@ -17,3 +17,22 @@ const getAllBlogs = async (req, res, next) => {
 }
 
 module.exports = getAllBlogs;
+
+//addBlog
+const addBlog = async (req, res, next) => {
+    const { title, description, image, user } = req.body;
+
+    const blog = new Blog({
+        title,
+        description,
+        image,
+        user,
+    });
+    try {
+        await blog.save({ session });
+    } catch (err) {
+        console.log(err);
+    }
+    return res.status(200).json({ blog });
+}
+module.exports = addBlog;
