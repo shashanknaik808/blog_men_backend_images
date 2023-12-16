@@ -4,7 +4,8 @@
   "description": "Building backend project using men to upload images.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js"
   },
   "author": "Shashank Naik",
   "license": "ISC",
