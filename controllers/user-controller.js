@@ -1,24 +1,24 @@
 const User = require("../model/User.js");
 
+// Login
 const getAllUser = async (req, res, next) => {
     let users;
     try {
         users = await User.find();
-    }
-    catch (err) {
+    } catch (err) {
         console.log(err);
     }
     if (!users) {
-        return res.status(404).json({
-            message: "No Users Found"
-        });
+        return res.status(404).json({ message: "No Users Found" });
     }
     return res.status(200).json({ users });
 }
 
 module.exports = getAllUser;
 
-module.exports.signup = async (req, res, next) => {
+
+// SignUp
+const signup = async (req, res, next) => {
     const { name, email, password } = req.body;
     let existingUser;
     try {
@@ -31,13 +31,13 @@ module.exports.signup = async (req, res, next) => {
             .status(400)
             .json({ message: "User Already Exists! Login Instead" });
     }
-    const hashedPassword = bcrypt.hashSync(password);
+    // const hashedPassword = bcrypt.hashSync(password);
 
     const user = new User({
         name,
         email,
-        password: hashedPassword,
-        blogs: [],
+        password
+        // blogs: [],
     });
 
     try {
@@ -47,3 +47,5 @@ module.exports.signup = async (req, res, next) => {
     }
     return res.status(201).json({ user });
 };
+
+module.exports = signup;
