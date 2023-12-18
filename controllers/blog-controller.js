@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Blog = require("../model/Blog");
 const User = require("../model/User");
+const path = require('path');
 
 //getAllBlogs
 module.exports.getAllBlogs = async (req, res, next) => {
@@ -19,20 +20,16 @@ module.exports.getAllBlogs = async (req, res, next) => {
 
 //addBlog
 module.exports.addBlog = async (req, res, next) => {
-    console.log(req.body);
-    console.log(req.files);
-
-    const { title, description, user } = req.body;
+    const { title, description, userID } = req.body;
     const { image } = req.files;
-    let sampleFile;
-    let uploadPath;
-    let date = new Date()
+
 
     if (!req.files || Object.keys(req.files).length === 0) {
         return res.status(400).send('No files were uploaded.');
     }
 
-    sampleFile = req.files.sampleFile;
+    let uploadPath;
+    let date = new Date()
     let newFileName = "img_" +
         date.getDate() +
         (date.getMonth() + 1) +
@@ -42,12 +39,13 @@ module.exports.addBlog = async (req, res, next) => {
         date.getSeconds() +
         date.getMilliseconds() +
         '.jpg';
-    uploadPath = __dirname + '/upload/' + newFileName;
-    console.log(newFileName);
+    // uploadPath = __dirname + '/upload/' + newFileName;
+    uploadPath = path.join(__dirname, '..', '/upload', newFileName);
+    console.log(uploadPath);
 
     let existingUser;
     try {
-        existingUser = await User.findById(user);
+        existingUser = await User.findById(userID);
     } catch (err) {
         return console.log(err);
     }
@@ -57,10 +55,13 @@ module.exports.addBlog = async (req, res, next) => {
     const blog = new Blog({
         title,
         description,
-        image: newFileName,
-        user,
+        image: '/photo/' + newFileName,
+        user: userID,
     });
     try {
+        image.mv(uploadPath, (err) => {
+            if (err) return res.status(500).json({ msg: "Image could not be uploaded" });
+        });
         const session = await mongoose.startSession();
         session.startTransaction({ session });
         await blog.save({ session });
@@ -71,7 +72,6 @@ module.exports.addBlog = async (req, res, next) => {
         console.log(err);
         return res.status(500).json({ message: err });
     }
-
     return res.status(200).json({ blog });
 };
 
@@ -144,7 +144,7 @@ module.exports.deleteBlog = async (req, res, next) => {
 
     let blog;
     try {
-        blog = await Blog.findByIdAndRemove(id).populate("user");
+        blog = await Blog.findByIdAndDelete(id).populate("user");
         await blog.user.blogs.pull(blog);
         await blog.user.save({});
     } catch (err) {

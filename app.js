@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(fileUpload());
-app.use('photo', express.static('upload'));
+app.use('/photo', express.static('upload'));
 
 app.use("/api/user", userRouter);
 app.use("/api/blog", blogRouter);
