@@ -22,38 +22,57 @@ module.exports.addBlog = async (req, res, next) => {
     console.log(req.body);
     console.log(req.files);
 
+    const { title, description, user } = req.body;
+    const { image } = req.files;
+    let sampleFile;
+    let uploadPath;
+    let date = new Date()
+
     if (!req.files || Object.keys(req.files).length === 0) {
-        return res.status(400).json({ msg: 'No files were uploaded, please check' });
+        return res.status(400).send('No files were uploaded.');
     }
 
-    // let existingUser;
-    // try {
-    //     existingUser = await User.findById(user);
-    // } catch (err) {
-    //     return console.log(err);
-    // }
-    // if (!existingUser) {
-    //     return res.status(400).json({ message: "Unable TO Find User By This ID" });
-    // }
-    // const blog = new Blog({
-    //     title,
-    //     description,
-    //     image,
-    //     user,
-    // });
-    // try {
-    //     const session = await mongoose.startSession();
-    //     session.startTransaction({ session });
-    //     await blog.save({ session });
-    //     existingUser.blogs.push(blog);
-    //     await existingUser.save({ session });
-    //     await session.commitTransaction();
-    // } catch (err) {
-    //     console.log(err);
-    //     return res.status(500).json({ message: err });
-    // }
+    sampleFile = req.files.sampleFile;
+    let newFileName = "img_" +
+        date.getDate() +
+        (date.getMonth() + 1) +
+        date.getFullYear() +
+        date.getHours() +
+        date.getMinutes() +
+        date.getSeconds() +
+        date.getMilliseconds() +
+        '.jpg';
+    uploadPath = __dirname + '/upload/' + newFileName;
+    console.log(newFileName);
 
-    return res.status(200).json({ status: 'success' });
+    let existingUser;
+    try {
+        existingUser = await User.findById(user);
+    } catch (err) {
+        return console.log(err);
+    }
+    if (!existingUser) {
+        return res.status(400).json({ message: "Unable TO Find User By This ID" });
+    }
+    const blog = new Blog({
+        title,
+        description,
+        image: newFileName,
+        user,
+    });
+    try {
+        const session = await mongoose.startSession();
+        session.startTransaction({ session });
+        await blog.save({ session });
+        existingUser.blogs.push(blog);
+        await existingUser.save({ session });
+        await session.commitTransaction();
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({ message: err });
+    }
+
+    return res.status(200).json({ blog });
 };
 
 
