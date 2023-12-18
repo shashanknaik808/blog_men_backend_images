@@ -57,6 +57,22 @@ const updateBlog = async (req, res, next) => {
 };
 module.exports = updateBlog;
 
+// getById
+const getById = async (req, res, next) => {
+    const id = req.params.id;
+    let blog;
+    try {
+        blog = await Blog.findById(id);
+    } catch (err) {
+        return console.log(err);
+    }
+    if (!blog) {
+        return res.status(404).json({ message: "No Blog Found" });
+    }
+    return res.status(200).json({ blog });
+}
+module.exports = getById;
+
 //deleteBlog
 const deleteBlog = async (req, res, next) => {
     const id = req.params.id;
@@ -75,18 +91,18 @@ const deleteBlog = async (req, res, next) => {
 }
 module.exports = deleteBlog;
 
-// getById
-const getById = async (req, res, next) => {
-    const id = req.params.id;
-    let blog;
+// getByUserId
+const getByUserId = async (req, res, next) => {
+    const userId = req.params.id;
+    let userBlogs;
     try {
-        blog = await Blog.findById(id);
+        userBlogs = await User.findById(userId).populate("blogs");
     } catch (err) {
         return console.log(err);
     }
-    if (!blog) {
+    if (!userBlogs) {
         return res.status(404).json({ message: "No Blog Found" });
     }
-    return res.status(200).json({ blog });
+    return res.status(200).json({ user: userBlogs });
 }
-module.exports = getById;
+module.exports = getByUserId;
