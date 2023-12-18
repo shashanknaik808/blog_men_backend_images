@@ -92,12 +92,35 @@ module.exports.addBlog = async (req, res, next) => {
 //updateBlog
 module.exports.updateBlog = async (req, res, next) => {
     const { title, description } = req.body;
-    const { image } = req.files;
-    const blogId = req.params.id;
 
-    if (!image) {
-        return res.status(400).json({ message: 'No files were found.' });
+    const blogId = req.params.id;
+    //console.log(req.files);
+
+
+    if (!req.files || Object.keys(req.files).length === 0) {
+        return res.status(404).json({ message: 'No files were uploaded.' });
     }
+
+    const { image } = req.files;
+
+    if (image.size > 100000)
+        return res.status(405).json({ message: "Size of the image cannot be more than 9000kb", soi: image.size });
+
+    let imgName = image.name.split('.');
+    if (!(imgName[1] === 'png' || imgName[1] === 'jpg'))
+        return res.status(401).json({ message: 'Please select a valid format png or jpg' });
+
+
+    let blog;
+    try {
+        blog = await Blog.findById(blogId);
+    } catch (e) {
+        console.log(e);
+        return res.status(503).json({ message: 'Error while fetching old blog' });
+    }
+
+    if (!blog)
+        return res.status(403).json({ message: 'Please check the blog ID' });
 
     let uploadPath;
     let date = new Date();
@@ -111,34 +134,34 @@ module.exports.updateBlog = async (req, res, next) => {
         date.getMilliseconds() +
         '.jpg';
 
+
+    blog.title = title;
+    blog.description = description;
+    blog.image = '/photo/' + newFileName;
+
+
     uploadPath = path.join(__dirname, '..', '/upload', newFileName);
     console.log(uploadPath);
 
-    try {
-        await Blog.updateOne({ "_id": blogId }, {
-            title: title,
-            description: description,
-            image: '/photo/' + newFileName,
-        });
 
-        await image.mv(uploadPath, (err) => {
-            if (err) {
-                console.error(err);
-                return res.status(500).json({ msg: "Image could not be uploaded" });
+    image.mv(uploadPath, async (err) => {
+        if (!err) {
+            try {
+                await blog.save();
             }
-        });
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ message: "Internal server error", error: err.message });
-    }
+            catch (error) {
+                console.log(error);
+                return res.status(502).json({ message: "Error while updating blog on Mongo" })
+            }
+        }
+        else {
+            console.error(err);
+            return res.status(501).json({ message: "Image could not be uploaded, Please retry again" });
+        }
+    });
 
-    const updatedBlog = await Blog.findById(blogId);
 
-    if (!updatedBlog) {
-        return res.status(500).json({ message: "Unable to update the blog" });
-    }
-
-    return res.status(200).json({ blog: updatedBlog });
+    return res.status(200).json({ blog });
 };
 
 
