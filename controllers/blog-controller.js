@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const Blog = require("../model/Blog");
 const User = require("../model/User");
 const path = require('path');
+const fs = require('fs');
+
 
 //getAllBlogs
 module.exports.getAllBlogs = async (req, res, next) => {
@@ -21,15 +23,15 @@ module.exports.getAllBlogs = async (req, res, next) => {
 //addBlog
 module.exports.addBlog = async (req, res, next) => {
     const { title, description, userID } = req.body;
-    const { image } = req.files;
-
 
     if (!req.files || Object.keys(req.files).length === 0) {
-        return res.status(400).send('No files were uploaded.');
+        return res.status(400).json({ message: 'No files were uploaded.' });
     }
 
+    const { image } = req.files;
+
     let uploadPath;
-    let date = new Date()
+    let date = new Date();
     let newFileName = "img_" +
         date.getDate() +
         (date.getMonth() + 1) +
@@ -39,39 +41,50 @@ module.exports.addBlog = async (req, res, next) => {
         date.getSeconds() +
         date.getMilliseconds() +
         '.jpg';
-    // uploadPath = __dirname + '/upload/' + newFileName;
-    uploadPath = path.join(__dirname, '..', '/upload', newFileName);
+
+    uploadPath = path.join(__dirname, '..', 'upload', newFileName);
+
     console.log(uploadPath);
+
+    if (!fs.existsSync(path.dirname(uploadPath))) {
+        fs.mkdirSync(path.dirname(uploadPath), { recursive: true });
+    }
 
     let existingUser;
     try {
         existingUser = await User.findById(userID);
     } catch (err) {
-        return console.log(err);
+        console.error(err);
+        return res.status(500).json({ message: 'Error finding user by ID' });
     }
+
     if (!existingUser) {
-        return res.status(400).json({ message: "Unable TO Find User By This ID" });
+        return res.status(400).json({ message: 'Unable to find user by this ID' });
     }
+
     const blog = new Blog({
         title,
         description,
         image: '/photo/' + newFileName,
         user: userID,
     });
+
     try {
-        image.mv(uploadPath, (err) => {
-            if (err) return res.status(500).json({ msg: "Image could not be uploaded" });
-        });
+        await image.mv(uploadPath);
+
         const session = await mongoose.startSession();
-        session.startTransaction({ session });
+        session.startTransaction();
+
         await blog.save({ session });
         existingUser.blogs.push(blog);
         await existingUser.save({ session });
+
         await session.commitTransaction();
     } catch (err) {
-        console.log(err);
-        return res.status(500).json({ message: err });
+        console.error(err);
+        return res.status(500).json({ message: 'Internal server error', error: err.message });
     }
+
     return res.status(200).json({ blog });
 };
 
