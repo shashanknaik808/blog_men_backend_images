@@ -78,24 +78,47 @@ module.exports.addBlog = async (req, res, next) => {
 
 //updateBlog
 module.exports.updateBlog = async (req, res, next) => {
-    // const { title, description, image } = req.body;
-    // const blogId = req.params.id;
-    // let blog;
-    // try {
-    //     await Blog.updateOne({ "_id": blogId }, {
-    //         title: title,
-    //         description: description,
-    //         image: image,
-    //     });
-    //     blog = await Blog.findById(blogId);
-    // } catch (err) {
-    //     return console.log(err);
-    // }
-    // if (!blog) {
-    //     return res.status(500).json({ message: "Unable To Update The Blog" });
-    // }
+    const { title, description } = req.body;
+    const { image } = req.files
+    const blogId = req.params.id;
 
-    // return res.status(200).json({ blog });
+    let sampleFile;
+    let uploadPath;
+    let date = new Date()
+
+    if (!req.files || Object.keys(req.files).length === 0) {
+        return res.status(400).send('No files were uploaded.');
+    }
+
+    sampleFile = req.files.sampleFile;
+    let newFileName = "img_" +
+        date.getDate() +
+        (date.getMonth() + 1) +
+        date.getFullYear() +
+        date.getHours() +
+        date.getMinutes() +
+        date.getSeconds() +
+        date.getMilliseconds() +
+        '.jpg';
+    uploadPath = __dirname + '/upload/' + newFileName;
+    console.log(newFileName);
+
+    let blog;
+    try {
+        await Blog.updateOne({ "_id": blogId }, {
+            title: title,
+            description: description,
+            image: newFileName,
+        });
+        blog = await Blog.findById(blogId);
+    } catch (err) {
+        return console.log(err);
+    }
+    if (!blog) {
+        return res.status(500).json({ message: "Unable To Update The Blog" });
+    }
+
+    return res.status(200).json({ blog });
 };
 
 
