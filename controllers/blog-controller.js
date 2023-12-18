@@ -95,11 +95,12 @@ module.exports.updateBlog = async (req, res, next) => {
     const { image } = req.files;
     const blogId = req.params.id;
 
-    if (!req.files || Object.keys(req.files).length === 0) {
-        return res.status(400).send('No files were Found.');
+    if (!image) {
+        return res.status(400).json({ message: 'No files were found.' });
     }
+
     let uploadPath;
-    let date = new Date()
+    let date = new Date();
     let newFileName = "img_" +
         date.getDate() +
         (date.getMonth() + 1) +
@@ -109,11 +110,10 @@ module.exports.updateBlog = async (req, res, next) => {
         date.getSeconds() +
         date.getMilliseconds() +
         '.jpg';
-    // uploadPath = __dirname + '/upload/' + newFileName;
+
     uploadPath = path.join(__dirname, '..', '/upload', newFileName);
     console.log(uploadPath);
 
-    let blog;
     try {
         await Blog.updateOne({ "_id": blogId }, {
             title: title,
@@ -121,18 +121,24 @@ module.exports.updateBlog = async (req, res, next) => {
             image: '/photo/' + newFileName,
         });
 
-        blog = await Blog.findById(blogId);
-        image.mv(uploadPath, (err) => {
-            if (err) return res.status(500).json({ msg: "Image could not be uploaded" });
+        await image.mv(uploadPath, (err) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ msg: "Image could not be uploaded" });
+            }
         });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Internal server error", error: err.message });
     }
-    catch (err) {
-        return console.log(err);
+
+    const updatedBlog = await Blog.findById(blogId);
+
+    if (!updatedBlog) {
+        return res.status(500).json({ message: "Unable to update the blog" });
     }
-    if (!blog) {
-        return res.status(500).json({ message: "Unable To Update The Blog" });
-    }
-    return res.status(200).json({ blog });
+
+    return res.status(200).json({ blog: updatedBlog });
 };
 
 
