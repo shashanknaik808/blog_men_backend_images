@@ -1,11 +1,11 @@
 const User = require("../model/User.js");
 const bcrypt = require("bcryptjs");
 
-// GetAllUser
-const getAllUser = async (req, res, next) => {
+//getAllUser
+module.exports.getAllUser = async (req, res, next) => {
     let users;
     try {
-        users = await User.find();
+        users = await User.find({});
     } catch (err) {
         console.log(err);
     }
@@ -15,11 +15,9 @@ const getAllUser = async (req, res, next) => {
     return res.status(200).json({ users });
 }
 
-module.exports = getAllUser;
 
-
-// SignUp
-const signup = async (req, res, next) => {
+//signup
+module.exports.signup = async (req, res, next) => {
     const { name, email, password } = req.body;
     let existingUser;
     try {
@@ -33,12 +31,11 @@ const signup = async (req, res, next) => {
             .json({ message: "User Already Exists! Login Instead" });
     }
     const hashedPassword = bcrypt.hashSync(password);
-
     const user = new User({
         name,
         email,
-        password: hashedPassword
-        // blogs: [],
+        password: hashedPassword,
+        blogs: [],
     });
 
     try {
@@ -47,12 +44,10 @@ const signup = async (req, res, next) => {
         return console.log(err);
     }
     return res.status(201).json({ user });
-};
-module.exports = signup;
+}
 
-
-// Login
-const login = async (req, res, next) => {
+//login
+module.exports.login = async (req, res, next) => {
     const { email, password } = req.body;
     let existingUser;
     try {
@@ -63,7 +58,6 @@ const login = async (req, res, next) => {
     if (!existingUser) {
         return res.status(404).json({ message: "Couldnt Find User By This Email" });
     }
-
     const isPasswordCorrect = bcrypt.compareSync(password, existingUser.password);
     if (!isPasswordCorrect) {
         return res.status(400).json({ message: "Incorrect Password" });
@@ -71,6 +65,4 @@ const login = async (req, res, next) => {
     return res
         .status(200)
         .json({ message: "Login Successfull", user: existingUser });
-};
-
-module.exports = login;
+}
