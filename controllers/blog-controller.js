@@ -56,3 +56,21 @@ const updateBlog = async (req, res, next) => {
     return res.status(200).json({ blog });
 };
 module.exports = updateBlog;
+
+//deleteBlog
+const deleteBlog = async (req, res, next) => {
+    const id = req.params.id;
+    let blog;
+    try {
+        blog = await Blog.findByIdAndRemove(id).populate("user");
+        await blog.user.blogs.pull(blog);
+        await blog.user.save();
+    } catch (err) {
+        console.log(err);
+    }
+    if (!blog) {
+        return res.status(500).json({ message: "Unable To Delete" });
+    }
+    return res.status(200).json({ message: "Successfully Delete" });
+}
+module.exports = deleteBlog;
