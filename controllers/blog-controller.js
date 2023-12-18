@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
-const Blog = require("../model/Blog.js");
-const User = require("../model/User.js");
+const Blog = require("../model/Blog");
+const User = require("../model/User");
 
-//GetAllBlogs
+//getAllBlogs
 module.exports.getAllBlogs = async (req, res, next) => {
     let blogs;
     try {
-        blogs = await Blog.find().populate("user");
+        blogs = await Blog.find({}).populate("user");
     } catch (err) {
         return console.log(err);
     }
@@ -14,7 +14,7 @@ module.exports.getAllBlogs = async (req, res, next) => {
         return res.status(404).json({ message: "No Blogs Found" });
     }
     return res.status(200).json({ blogs });
-}
+};
 
 
 //addBlog
@@ -49,25 +49,28 @@ module.exports.addBlog = async (req, res, next) => {
     }
 
     return res.status(200).json({ blog });
-}
+};
 
 
 //updateBlog
 module.exports.updateBlog = async (req, res, next) => {
-    const { title, description } = req.body;
+    const { title, description, image } = req.body;
     const blogId = req.params.id;
     let blog;
     try {
-        blog = await Blog.findByIdAndUpdate(blogId, {
-            "title": title,
-            "description": description,
+        await Blog.updateOne({ "_id": blogId }, {
+            title: title,
+            description: description,
+            image: image,
         });
+        blog = await Blog.findById(blogId);
     } catch (err) {
         return console.log(err);
     }
     if (!blog) {
         return res.status(500).json({ message: "Unable To Update The Blog" });
     }
+
     return res.status(200).json({ blog });
 };
 
@@ -85,10 +88,10 @@ module.exports.getById = async (req, res, next) => {
         return res.status(404).json({ message: "No Blog Found" });
     }
     return res.status(200).json({ blog });
-}
+};
 
 
-//deleteBlog
+// deleteBlog
 module.exports.deleteBlog = async (req, res, next) => {
     const id = req.params.id;
 
@@ -96,7 +99,7 @@ module.exports.deleteBlog = async (req, res, next) => {
     try {
         blog = await Blog.findByIdAndRemove(id).populate("user");
         await blog.user.blogs.pull(blog);
-        await blog.user.save();
+        await blog.user.save({});
     } catch (err) {
         console.log(err);
     }
@@ -104,22 +107,20 @@ module.exports.deleteBlog = async (req, res, next) => {
         return res.status(500).json({ message: "Unable To Delete" });
     }
     return res.status(200).json({ message: "Successfully Delete" });
-}
+};
 
 
 // getByUserId
 module.exports.getByUserId = async (req, res, next) => {
     const userId = req.params.id;
-    //console.log(userId);
-    let user;
+    let userBlogs;
     try {
-        user = await User.findById(userId).populate("blogs");
-        console.log(user);
+        userBlogs = await User.findById(userId).populate("blogs");
     } catch (err) {
         return console.log(err);
     }
-    if (!user) {
+    if (!userBlogs) {
         return res.status(404).json({ message: "No Blog Found" });
     }
-    return res.status(200).json({ user });
+    return res.status(200).json({ user: userBlogs });
 };
