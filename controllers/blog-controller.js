@@ -20,7 +20,7 @@ module.exports.getAllBlogs = async (req, res, next) => {
 };
 
 
-//addBlog
+// addBlog
 module.exports.addBlog = async (req, res, next) => {
     const { title, description, userID } = req.body;
 
@@ -29,6 +29,15 @@ module.exports.addBlog = async (req, res, next) => {
     }
 
     const { image } = req.files;
+
+    if (image.size > 100000) {
+        return res.status(405).json({ message: "Size of the image cannot be more than 9000kb", soi: image.size });
+    }
+
+    let imgName = image.name.split('.');
+    if (!(imgName[1] === 'png' || imgName[1] === 'jpg')) {
+        return res.status(401).json({ message: 'Please select a valid format png or jpg' });
+    }
 
     let uploadPath;
     let date = new Date();
@@ -87,6 +96,7 @@ module.exports.addBlog = async (req, res, next) => {
 
     return res.status(200).json({ blog });
 };
+
 
 
 //updateBlog
