@@ -1,11 +1,10 @@
 const mongoose = require("mongoose");
-const Blog = require("../model/Blog");
-const User = require("../model/User");
 const path = require('path');
-const fs = require('fs');
+const Blog = require("../model/Blog.js");
+const User = require("../model/User.js");
 
 
-//getAllBlogs
+// getAllBlogs
 module.exports.getAllBlogs = async (req, res, next) => {
     let blogs;
     try {
@@ -21,26 +20,18 @@ module.exports.getAllBlogs = async (req, res, next) => {
 
 
 // addBlog
-module.exports.addBlog = async (req, res, next) => {
+module.exports.addBlog = async (req, res) => {
+
     const { title, description, userID } = req.body;
 
     if (!req.files || Object.keys(req.files).length === 0) {
-        return res.status(400).json({ message: 'No files were uploaded.' });
+        return res.status(404).json({ message: "Image Does not Exist" });
     }
 
     const { image } = req.files;
 
-    if (image.size > 1000000) {
-        return res.status(405).json({ message: "Size of the image cannot be more than 9000kb", soi: image.size });
-    }
-
-    let imgName = image.name.split('.');
-    if (!(imgName[1] === 'png' || imgName[1] === 'jpg')) {
-        return res.status(401).json({ message: 'Please select a valid format png or jpg' });
-    }
-
     let uploadPath;
-    let date = new Date();
+    let date = new Date()
     let newFileName = "img_" +
         date.getDate() +
         (date.getMonth() + 1) +
@@ -51,89 +42,53 @@ module.exports.addBlog = async (req, res, next) => {
         date.getMilliseconds() +
         '.jpg';
 
-    uploadPath = path.join(__dirname, '..', 'upload', newFileName);
+    uploadPath = path.join(__dirname, '..', '/upload', newFileName);
 
-    console.log(uploadPath);
-
-    if (!fs.existsSync(path.dirname(uploadPath))) {
-        fs.mkdirSync(path.dirname(uploadPath), { recursive: true });
-    }
-
-    let existingUser;
+    let existingUser = null;
     try {
         existingUser = await User.findById(userID);
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ message: 'Error finding user by ID' });
+        return console.log(err);
     }
-
     if (!existingUser) {
-        return res.status(400).json({ message: 'Unable to find user by this ID' });
+        return res.status(403).json({ message: "Unable TO Find User By This ID" });
     }
-
+    console.log("Completed User Validation");
     const blog = new Blog({
         title,
         description,
         image: '/photo/' + newFileName,
         user: userID,
     });
-
     try {
-        await image.mv(uploadPath);
-
+        image.mv(uploadPath, (err) => {
+            if (err) return res.status(500).json({ message: "Backend: Image could not be uploaded" });
+        });
         const session = await mongoose.startSession();
-        session.startTransaction();
-
+        session.startTransaction({ session });
         await blog.save({ session });
         existingUser.blogs.push(blog);
         await existingUser.save({ session });
-
         await session.commitTransaction();
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ message: 'Internal server error', error: err.message });
+        console.log(err);
+        return res.status(500).json({ message: err });
     }
 
     return res.status(200).json({ blog });
 };
 
-
-
-//updateBlog
+// updateBlog
 module.exports.updateBlog = async (req, res, next) => {
     const { title, description } = req.body;
-
+    const { image } = req.files;
     const blogId = req.params.id;
-    //console.log(req.files);
-
 
     if (!req.files || Object.keys(req.files).length === 0) {
-        return res.status(404).json({ message: 'No files were uploaded.' });
+        return res.status(400).send('No files were Found.');
     }
-
-    const { image } = req.files;
-   
-    if (image.size > 1000000)
-        return res.status(405).json({ message: "Size of the image cannot be more than 9000kb", soi: image.size });
-
-    let imgName = image.name.split('.');
-    if (!(imgName[1] === 'png' || imgName[1] === 'jpg'))
-        return res.status(401).json({ message: 'Please select a valid format png or jpg' });
-
-
-    let blog;
-    try {
-        blog = await Blog.findById(blogId);
-    } catch (e) {
-        console.log(e);
-        return res.status(503).json({ message: 'Error while fetching old blog' });
-    }
-
-    if (!blog)
-        return res.status(403).json({ message: 'Please check the blog ID' });
-
     let uploadPath;
-    let date = new Date();
+    let date = new Date()
     let newFileName = "img_" +
         date.getDate() +
         (date.getMonth() + 1) +
@@ -143,33 +98,27 @@ module.exports.updateBlog = async (req, res, next) => {
         date.getSeconds() +
         date.getMilliseconds() +
         '.jpg';
-
-
-    blog.title = title;
-    blog.description = description;
-    blog.image = '/photo/' + newFileName;
-
-
+    // uploadPath = __dirname + '/upload/' + newFileName;
     uploadPath = path.join(__dirname, '..', '/upload', newFileName);
     console.log(uploadPath);
 
-
-    image.mv(uploadPath, async (err) => {
-        if (!err) {
-            try {
-                await blog.save();
-            }
-            catch (error) {
-                console.log(error);
-                return res.status(502).json({ message: "Error while updating blog on Mongo" })
-            }
-        }
-        else {
-            console.error(err);
-            return res.status(501).json({ message: "Image could not be uploaded, Please retry again" });
-        }
-    });
-
+    let blog;
+    try {
+        await Blog.updateOne({ "_id": blogId }, {
+            title: title,
+            description: description,
+            image: '/photo/' + newFileName,
+        });
+        blog = await Blog.findById(blogId);
+        image.mv(uploadPath, (err) => {
+            if (err) return res.status(500).json({ msg: "Image could not be uploaded" });
+        });
+    } catch (err) {
+        return console.log(err);
+    }
+    if (!blog) {
+        return res.status(500).json({ message: "Unable To Update The Blog" });
+    }
 
     return res.status(200).json({ blog });
 };
