@@ -1,19 +1,23 @@
-const express = require("express");
+const express = require('express');
 const {
     getAllBlogs,
     addBlog,
     updateBlog,
     getById,
-    getByUserId,
-    deleteBlog
-} = require("../controllers/blog-controller.js");
+    deleteBlog,
+    getByUserId
+} = require('../controllers/blog-controller.js');
 
 const blogRouter = express.Router();
 
+
 blogRouter.get("/", getAllBlogs);
 blogRouter.post("/add", addBlog);
+
 blogRouter.put("/update/:id", updateBlog);
+
 blogRouter.get("/:id", getById);
+
 blogRouter.delete("/:id", deleteBlog);
 blogRouter.get("/user/:id", getByUserId);
 
