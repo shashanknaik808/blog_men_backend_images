@@ -30,7 +30,7 @@ module.exports.addBlog = async (req, res, next) => {
 
     const { image } = req.files;
 
-    if (image.size > 100000) {
+    if (image.size > 1000000) {
         return res.status(405).json({ message: "Size of the image cannot be more than 9000kb", soi: image.size });
     }
 
@@ -112,8 +112,8 @@ module.exports.updateBlog = async (req, res, next) => {
     }
 
     const { image } = req.files;
-
-    if (image.size > 100000)
+   
+    if (image.size > 1000000)
         return res.status(405).json({ message: "Size of the image cannot be more than 9000kb", soi: image.size });
 
     let imgName = image.name.split('.');
